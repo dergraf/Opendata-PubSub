@@ -5,7 +5,7 @@
 -export([websocket_init/3, websocket_handle/3,
          websocket_info/3, websocket_terminate/3]).
 
--record(state, {service}).
+-record(state, {service, subscriptions=[]}).
 
 init({_Any, http}, Req, []) ->
     case cowboy_http_req:header('Upgrade', Req) of
@@ -75,12 +75,28 @@ websocket_init(_Any, Req, []) ->
     Req2 = cowboy_http_req:compact(Req),
     {ok, Req2, #state{service=Service}, hibernate}.
 
-websocket_handle({text, <<"subscribe:", Topic/binary>>}, Req, #state{service=Svc} = State) ->
-    opendata_pubsub:subscribe(Svc, Topic),
-    {reply, {text, <<"ok">>}, Req, State, hibernate};
-websocket_handle({text, <<"unsubscribe:", Topic/binary>>}, Req, #state{service=Svc} = State) ->
-    opendata_pubsub:unsubscribe(Svc, Topic),
-    {reply, {text, <<"ok">>}, Req, State, hibernate};
+websocket_handle({text, <<"subscribe:", Topic/binary>>}, Req, #state{service=Svc, subscriptions=Subs} = State) ->
+    NewSubs =
+    case lists:member(Topic, Subs) of
+        false ->
+            opendata_pubsub:subscribe(Svc, Topic),
+            catch opendata_webhook_handler:incr_topic_counter(Svc, Topic),
+            Subs ++ [Topic];
+        true ->
+            Subs
+    end,
+    {reply, {text, <<"ok">>}, Req, State#state{subscriptions=NewSubs}, hibernate};
+websocket_handle({text, <<"unsubscribe:", Topic/binary>>}, Req, #state{service=Svc, subscriptions=Subs} = State) ->
+    NewSubs =
+    case lists:member(Topic, Subs) of
+        false ->
+            opendata_pubsub:unsubscribe(Svc, Topic),
+            catch opendata_webhook_handler:decr_topic_counter(Svc, Topic),
+            Subs -- [Topic];
+        true ->
+            Subs
+    end,
+    {reply, {text, <<"ok">>}, Req, State#state{subscriptions=NewSubs}, hibernate};
 
 websocket_handle({text, Msg}, Req, State) ->
     {reply, {text, << "You said: ", Msg/binary >>}, Req, State, hibernate};

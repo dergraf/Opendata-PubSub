@@ -13,6 +13,7 @@ start() ->
     application:start(crypto),
     application:start(public_key),
     application:start(ssl),
+    application:start(ibrowse),
     application:start(cowboy),
     application:start(gproc),
     application:start(opendata_pubsub).
@@ -21,6 +22,7 @@ start(_StartType, _StartArgs) ->
     Dispatch = [
             {'_', [
                     {[<<"pubsub">>, '_'], opendata_handler, []},
+                    {[<<"demohook">>], opendata_demohook, []},
                     {'_', default_handler, []}
                     ]}
             ],
