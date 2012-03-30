@@ -1,14 +1,14 @@
 -module(opendata_pubsub).
--export([publish/2, subscribe/1, unsubscribe/1]).
+-export([publish/3, subscribe/2, unsubscribe/2]).
 
-publish(Topic, Msg) ->
-    Key = {?MODULE, Topic},
+publish(Service, Topic, Msg) ->
+    Key = {?MODULE, Service, Topic},
     gproc:send({p, l, Key}, {publish, Topic, Msg}).
 
-subscribe(Topic) ->
-    Key = {?MODULE, Topic},
+subscribe(Service, Topic) ->
+    Key = {?MODULE, Service, Topic},
     gproc:reg({p, l, Key}).
 
-unsubscribe(Topic) ->
-    Key = {?MODULE, Topic},
+unsubscribe(Service, Topic) ->
+    Key = {?MODULE, Service, Topic},
     gproc:unreg({p, l, Key}).

@@ -5,6 +5,8 @@
 -export([websocket_init/3, websocket_handle/3,
          websocket_info/3, websocket_terminate/3]).
 
+-record(state, {service}).
+
 init({_Any, http}, Req, []) ->
     case cowboy_http_req:header('Upgrade', Req) of
         {undefined, Req2} ->
@@ -35,7 +37,7 @@ function ready(){
     }
     if (\"WebSocket\" in window) {
         // browser supports websockets
-        ws = new WebSocket(\"ws://localhost:8080/pubsub\");
+        ws = new WebSocket(\"ws://localhost:8080/pubsub/sbb\");
         ws.onopen = function() {
             // websocket is connected
             addStatus(\"websocket connected!\");
@@ -69,15 +71,15 @@ terminate(_Req, _State) ->
     ok.
 
 websocket_init(_Any, Req, []) ->
-    timer:send_interval(1000, tick),
+    {[<<"pubsub">>, Service], _} = cowboy_http_req:path(Req),
     Req2 = cowboy_http_req:compact(Req),
-    {ok, Req2, undefined, hibernate}.
+    {ok, Req2, #state{service=Service}, hibernate}.
 
-websocket_handle({text, <<"subscribe:", Topic/binary>>}, Req, State) ->
-    opendata_pubsub:subscribe(Topic),
+websocket_handle({text, <<"subscribe:", Topic/binary>>}, Req, #state{service=Svc} = State) ->
+    opendata_pubsub:subscribe(Svc, Topic),
     {reply, {text, <<"ok">>}, Req, State, hibernate};
-websocket_handle({text, <<"unsubscribe:", Topic/binary>>}, Req, State) ->
-    opendata_pubsub:unsubscribe(Topic),
+websocket_handle({text, <<"unsubscribe:", Topic/binary>>}, Req, #state{service=Svc} = State) ->
+    opendata_pubsub:unsubscribe(Svc, Topic),
     {reply, {text, <<"ok">>}, Req, State, hibernate};
 
 websocket_handle({text, Msg}, Req, State) ->

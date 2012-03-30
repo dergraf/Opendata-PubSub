@@ -20,7 +20,7 @@ start() ->
 start(_StartType, _StartArgs) ->
     Dispatch = [
             {'_', [
-                    {[<<"pubsub">>], opendata_handler, []},
+                    {[<<"pubsub">>, '_'], opendata_handler, []},
                     {'_', default_handler, []}
                     ]}
             ],
