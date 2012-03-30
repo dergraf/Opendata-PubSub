@@ -1,0 +1,12 @@
+{application, opendata_pubsub,
+ [
+  {description, ""},
+  {vsn, "1"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib
+                 ]},
+  {mod, { opendata_pubsub_app, []}},
+  {env, []}
+ ]}.
