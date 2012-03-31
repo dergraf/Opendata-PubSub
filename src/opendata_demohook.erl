@@ -6,8 +6,11 @@ init({_Any, http}, Req, []) ->
     {ok, Req, undefined}.
 
 handle(Req, State) ->
-    RandVal = random:uniform(1000000),
-    {ok, Req2} = cowboy_http_req:reply(200, [], list_to_binary(integer_to_list(RandVal)), Req),
+    {JsonTopics, _} = cowboy_http_req:qs_val(<<"topics">>, Req),
+    Topics = jsx:to_term(JsonTopics),
+    Response = [{T, random:uniform(1000000)} ||T <- Topics],
+    JsonResponse = jsx:to_json(Response),
+    {ok, Req2} = cowboy_http_req:reply(200, [], JsonResponse, Req),
     {ok, Req2, State}.
 
 terminate(_Req, _State) ->

@@ -23,6 +23,13 @@ start(_StartType, _StartArgs) ->
             {'_', [
                     {[<<"pubsub">>, '_'], opendata_handler, []},
                     {[<<"demohook">>], opendata_demohook, []},
+                    {[<<"static">>, '...'], cowboy_http_static,
+                        [{directory, {priv_dir, opendata_pubsub, [<<"www">>]}},
+                         {mimetypes, [
+                                    {<<".html">>, [<<"text/html">>]},
+                                    {<<".css">>, [<<"text/css">>]},
+                                    {<<".js">>, [<<"application/javascript">>]}
+                         ]}]},
                     {'_', default_handler, []}
                     ]}
             ],

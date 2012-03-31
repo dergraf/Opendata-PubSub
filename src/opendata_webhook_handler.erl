@@ -72,14 +72,17 @@ handle_cast({decr_topic_counter, Topic}, #state{topics=Topics} = State) ->
 
 handle_info(trigger, #state{name=HookName, hook=Hook, topics=Topics} = State) ->
     ListOfTopics = lists:flatten(ets:match(Topics, {'$1', '_'})),
-    Url = list_to_binary([Hook, <<"?topics=">>, [[T, <<",">>] || T <- ListOfTopics]]),
-    {ok, _Status, _ResponseHeaders, ResponseBody} = ibrowse:send_req(binary_to_list(Url), [], get),
-    %% TODO: check Response Status
-    %% TODO: parse Response , one message / topic
-    BHook = list_to_binary(HookName),
-    spawn(fun()->
-        [opendata_pubsub:publish(BHook, Topic, ResponseBody)||Topic <- ListOfTopics]
-    end),
+    Url = list_to_binary([Hook, <<"?topics=">>, jsx:term_to_json(ListOfTopics)]),
+    case ibrowse:send_req(binary_to_list(Url), [], get) of
+        {ok, _Status, _ResponseHeaders, "[]"} ->
+            ok;
+        {ok, _Status, _ResponseHeaders, JsonResponseBody} ->
+            ResponseBody = jsx:json_to_term(list_to_binary(JsonResponseBody)),
+            BHook = list_to_binary(HookName),
+            spawn(fun()->
+                [opendata_pubsub:publish(BHook, Topic, Data)||{Topic, Data} <- ResponseBody]
+            end)
+    end,
     {noreply, State}.
 
 terminate(_Reason, _State) ->

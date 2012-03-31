@@ -90,11 +90,11 @@ websocket_handle({text, <<"unsubscribe:", Topic/binary>>}, Req, #state{service=S
     NewSubs =
     case lists:member(Topic, Subs) of
         false ->
+            Subs;
+        true ->
             opendata_pubsub:unsubscribe(Svc, Topic),
             catch opendata_webhook_handler:decr_topic_counter(Svc, Topic),
-            Subs -- [Topic];
-        true ->
-            Subs
+            Subs -- [Topic]
     end,
     {reply, {text, <<"ok">>}, Req, State#state{subscriptions=NewSubs}, hibernate};
 
@@ -104,7 +104,8 @@ websocket_handle(_Any, Req, State) ->
     {ok, Req, State}.
 
 websocket_info({publish, Topic, Msg}, Req, State) ->
-    {reply, {text, list_to_binary(["{\"topic\":\"", Topic, "\" , \"data\":\"", Msg, "\"}"])}, Req, State, hibernate};
+    Response = jsx:term_to_json([{<<"topic">>, Topic}, {<<"data">>, Msg}]),
+    {reply, {text, Response}, Req, State, hibernate};
 
 websocket_info(tick, Req, State) ->
     {reply, {text, <<"Tick">>}, Req, State, hibernate};
