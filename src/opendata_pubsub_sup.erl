@@ -24,5 +24,7 @@ start_link() ->
 %% ===================================================================
 
 init([]) ->
+    {ok, Hooks} = application:get_env(hooks),
+    [opendata_webhook_handler:start_hook(Name, Url, Interval) || {Name, Url, Interval} <- Hooks],
     {ok, { {one_for_one, 5, 10}, []} }.
 

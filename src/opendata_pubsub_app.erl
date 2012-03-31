@@ -19,6 +19,9 @@ start() ->
     application:start(opendata_pubsub).
 
 start(_StartType, _StartArgs) ->
+    {ok, Port} = application:get_env(port),
+    {ok, Ip} = application:get_env(ip),
+
     Dispatch = [
             {'_', [
                     {[<<"pubsub">>, '_'], opendata_handler, []},
@@ -34,7 +37,7 @@ start(_StartType, _StartArgs) ->
                     ]}
             ],
     cowboy:start_listener(my_http_listener, 100,
-                          cowboy_tcp_transport, [{port, 8080}],
+                          cowboy_tcp_transport, [{ip, Ip}, {port, Port}],
                           cowboy_http_protocol, [{dispatch, Dispatch}]
                          ),
     opendata_pubsub_sup:start_link().

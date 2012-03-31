@@ -8,5 +8,11 @@
                   stdlib
                  ]},
   {mod, { opendata_pubsub_app, []}},
-  {env, []}
+  {env, [
+        {ip, {127,0,0,1}},
+        {port, 8888},
+        {hooks, [
+            {"sbb", "http://localhost:8888/demohook", 1000}
+        ]}
+    ]}
  ]}.

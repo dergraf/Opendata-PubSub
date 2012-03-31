@@ -37,7 +37,7 @@ function ready(){
     }
     if (\"WebSocket\" in window) {
         // browser supports websockets
-        ws = new WebSocket(\"ws://localhost:8080/pubsub/sbb\");
+        ws = new WebSocket(\"ws://\"+window.location.host+\"/pubsub/sbb\");
         ws.onopen = function() {
             // websocket is connected
             addStatus(\"websocket connected!\");
